@@ -596,3 +596,4 @@ details.fams .chips{margin-top:10px}
 .st>i.jn{display:flex;gap:1px;flex:none;align-items:center;justify-content:center;min-width:46px;height:28px;padding:0 4px;border-radius:8px;background:var(--c);color:#fff}
 .st>i.jn svg{width:16px;height:16px}
 .choices.pics .choice .ph img,.pic img,.card .ph img{color:transparent}
+.sheet .thumbs{overflow-x:auto;justify-content:flex-start;scrollbar-width:thin}.sheet .thumbs button{flex:none}
