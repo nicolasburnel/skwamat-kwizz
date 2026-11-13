@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 225 460 505" width="460" height="505">
+  <!-- corps enroulé -->
+  <ellipse cx="250" cy="640" rx="205" ry="78" fill="#ffffff"/>
+  <ellipse cx="250" cy="632" rx="150" ry="50" fill="none" stroke="#141414" stroke-width="12"/>
+  <ellipse cx="250" cy="626" rx="92" ry="28" fill="none" stroke="#141414" stroke-width="12"/>
+  <!-- queue -->
+  <path d="M440 650 C 470 640, 480 610, 468 590" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round"/>
+  <!-- cou -->
+  <path d="M250 640 C 215 600, 215 520, 250 470" fill="none" stroke="#141414" stroke-width="96" stroke-linecap="round"/>
+  <path d="M250 640 C 215 600, 215 520, 250 470" fill="none" stroke="#ffffff" stroke-width="72" stroke-linecap="round"/>
+  <!-- tête vue de face -->
+  <path d="M250 236 C 352 236, 392 300, 384 366 C 376 432, 318 482, 250 484 C 182 482, 124 432, 116 366 C 108 300, 148 236, 250 236 Z" fill="#ffffff" stroke="#141414" stroke-width="12"/>
+  <path d="M190 262 C 212 300, 230 312, 250 316 C 270 312, 288 300, 310 262" fill="none" stroke="#141414" stroke-width="7" stroke-linecap="round"/>
+  <path d="M250 316 L 250 362" stroke="#141414" stroke-width="7" stroke-linecap="round"/>
+  <!-- yeux -->
+  <circle cx="176" cy="352" r="36" fill="#141414"/><circle cx="176" cy="352" r="26" fill="#ffffff"/><ellipse cx="176" cy="352" rx="6" ry="19" fill="#141414"/>
+  <circle cx="324" cy="352" r="36" fill="#141414"/><circle cx="324" cy="352" r="26" fill="#ffffff"/><ellipse cx="324" cy="352" rx="6" ry="19" fill="#141414"/>
+  <!-- narines et sourire -->
+  <circle cx="230" cy="420" r="6.5" fill="#141414"/><circle cx="270" cy="420" r="6.5" fill="#141414"/>
+  <path d="M172 430 C 205 462, 295 462, 328 430" fill="none" stroke="#141414" stroke-width="10" stroke-linecap="round"/>
+  <!-- langue fourchue -->
+  <path d="M250 458 L 250 530 L 230 560 M 250 530 L 270 560" fill="none" stroke="#141414" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- la langue goûte l'air -->
+  <g fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round">
+    <path d="M120 470 C 95 500, 92 535, 105 565"/><path d="M78 452 C 42 492, 38 545, 58 590"/>
+    <path d="M380 470 C 405 500, 408 535, 395 565"/><path d="M422 452 C 458 492, 462 545, 442 590"/>
+  </g></svg>
