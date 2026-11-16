@@ -117,7 +117,7 @@ async function loadData() {
 const LIC = { perm: 'avec son autorisation', 'cc0': 'CC0', 'cc-by': 'CC BY', 'cc-by-nc': 'CC BY-NC', 'cc-by-sa': 'CC BY-SA', 'cc-by-nc-sa': 'CC BY-NC-SA' };
 const imgURL = (p, size = 'medium') => p.local ? `assets/photos/${['square', 'small'].includes(size) ? p.local.replace(/\.jpg$/, '-mini.jpg') : p.local}` : `https://inaturalist-open-data.s3.amazonaws.com/photos/${p.id}/${size}.${p.ext}`;
 const hasPhoto = s => s.photos.length > 0;
-const credit = p => `© ${p.attr} · ${LIC[p.lic] || p.lic}`;
+const credit = p => p.local ? `© ${p.attr}` : `© ${p.attr} · ${LIC[p.lic] || p.lic}`;
 const photoLink = p => p.local ? '' : p.obs ? 'https://www.inaturalist.org/observations/' + p.obs : 'https://www.inaturalist.org/photos/' + p.id;
 const creditTxt = p => credit(p) + (p.local ? '' : ' · iNaturalist');
 
@@ -682,7 +682,7 @@ function viewAbout() {
     <h2>Crédits</h2>
     <p><b>Textes, statuts et critères d'identification :</b> d'après E. Remérand (2024), <i>Guide d'identification des serpents de Guyane et amphisbènes</i> ; E. Remérand (2021), <i>Aide à l'identification des lézards de Guyane</i> ; M. Dewynter, T. Le Pape, E. Remérand & T. Frétey (2019), <i>L'identification des tortues terrestres, dulçaquicoles et marines de Guyane</i>, Les cahiers de la fondation Biotope 26 ; M. Dewynter, C. Marty & M. Blanc (2016), <i>L'identification des caïmans de Guyane</i>, Les cahiers de la fondation Biotope 2.</p>
     <p><b>Photos :</b> <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a>, sous licences Creative Commons (CC0, CC BY, CC BY-NC, CC BY-SA, CC BY-NC-SA). L'auteur et la licence sont affichés sur chaque photo. Merci aux ${ph.length} photographes : ${ph.map(esc).join(', ')}.</p>
-    <p><b>Photos transmises avec l'autorisation de leurs auteurs :</b> ${[...new Set(LOCAL.map(l => l.auteur))].map(esc).join(', ')}, pour les espèces encore absentes ou mal identifiées sur iNaturalist.</p>
+    <p><b>Autres photos :</b> ${[...new Set(LOCAL.map(l => l.auteur))].map(esc).join(', ')}, pour les espèces encore absentes ou mal identifiées sur iNaturalist.</p>
     <p><b>Cartes :</b> localités des observations iNaturalist de qualité recherche en Guyane (coordonnées non masquées). Contour de la Guyane : Natural Earth.</p>
     <p><b>Taxonomie :</b> noms mis à jour en 2026 (${changed.length} changements par rapport aux guides, l'ancien nom est indiqué sur chaque fiche), dont <i>Sibon nebulatus</i> et <i>S. nigralbus</i>, <i>Alopoglossus brevifrontalis</i>, <i>Micrurus diutius</i>, <i>Corallus hortulana</i> et <i>Podocnemis unifilis</i>.</p>
     <p><b>Licence :</b> chaque photo garde la licence choisie par son auteur. Le code de l'application est sous licence MIT.</p>
