@@ -1,27 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 225 460 505" width="460" height="505">
-  <!-- corps enroulé -->
-  <ellipse cx="250" cy="640" rx="205" ry="78" fill="#141414"/>
-  <ellipse cx="250" cy="632" rx="150" ry="50" fill="none" stroke="#ffffff" stroke-width="12"/>
-  <ellipse cx="250" cy="626" rx="92" ry="28" fill="none" stroke="#ffffff" stroke-width="12"/>
-  <!-- queue -->
-  <path d="M440 650 C 470 640, 480 610, 468 590" fill="none" stroke="#141414" stroke-width="26" stroke-linecap="round"/>
-  <!-- cou -->
-  <path d="M250 640 C 215 600, 215 520, 250 470" fill="none" stroke="#ffffff" stroke-width="96" stroke-linecap="round"/>
-  <path d="M250 640 C 215 600, 215 520, 250 470" fill="none" stroke="#141414" stroke-width="72" stroke-linecap="round"/>
-  <!-- tête vue de face -->
-  <path d="M250 236 C 352 236, 392 300, 384 366 C 376 432, 318 482, 250 484 C 182 482, 124 432, 116 366 C 108 300, 148 236, 250 236 Z" fill="#141414" stroke="#ffffff" stroke-width="12"/>
-  <path d="M190 262 C 212 300, 230 312, 250 316 C 270 312, 288 300, 310 262" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
-  <path d="M250 316 L 250 362" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
-  <!-- yeux -->
-  <circle cx="176" cy="352" r="36" fill="#ffffff"/><circle cx="176" cy="352" r="26" fill="#141414"/><ellipse cx="176" cy="352" rx="6" ry="19" fill="#ffffff"/>
-  <circle cx="324" cy="352" r="36" fill="#ffffff"/><circle cx="324" cy="352" r="26" fill="#141414"/><ellipse cx="324" cy="352" rx="6" ry="19" fill="#ffffff"/>
-  <!-- narines et sourire -->
-  <circle cx="230" cy="420" r="6.5" fill="#ffffff"/><circle cx="270" cy="420" r="6.5" fill="#ffffff"/>
-  <path d="M172 430 C 205 462, 295 462, 328 430" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
-  <!-- langue fourchue -->
-  <path d="M250 458 L 250 530 L 230 560 M 250 530 L 270 560" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- la langue goûte l'air -->
-  <g fill="none" stroke="#141414" stroke-width="11" stroke-linecap="round">
-    <path d="M120 470 C 95 500, 92 535, 105 565"/><path d="M78 452 C 42 492, 38 545, 58 590"/>
-    <path d="M380 470 C 405 500, 408 535, 395 565"/><path d="M422 452 C 458 492, 462 545, 442 590"/>
-  </g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 120 580 280" width="580" height="280">
+  <!-- branche -->
+  <path d="M 18 304 C 120 292, 260 278, 392 268" fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="round"/>
+  <path d="M 18 304 C 120 292, 260 278, 392 268" fill="none" stroke="#c4c4c4" stroke-width="32" stroke-linecap="round"/>
+  <path d="M 40 298 C 120 290, 200 282, 260 278 M 290 276 C 330 273, 360 271, 378 270" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 70 310 C 110 306, 150 302, 180 300" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M 66 292 C 46 352, 128 388, 150 300 C 160 238, 202 232, 212 290 C 228 384, 300 386, 304 288 C 306 206, 334 150, 386 158 C 410 162, 420 174, 444 174" stroke="#ffffff" stroke-width="22"/><path d="M 66 292 C 46 352, 128 388, 150 300 C 160 238, 202 232, 212 290 C 228 384, 300 386, 304 288 C 306 206, 334 150, 386 158 C 410 162, 420 174, 444 174" stroke="#141414" stroke-width="15"/><path d="M 66 292 C 46 352, 128 388, 150 300 C 160 238, 202 232, 212 290 C 228 384, 300 386, 304 288 C 306 206, 334 150, 386 158 C 410 162, 420 174, 444 174" stroke="#ffffff" stroke-width="15" stroke-dasharray="2.2 3.2 2.2 36" stroke-linecap="butt"/></g>
+  <!-- la branche repasse devant le corps : il s'enroule -->
+  <clipPath id="cp141414"><rect x="128" y="240" width="44" height="90"/><rect x="286" y="230" width="40" height="90"/></clipPath>
+  <g clip-path="url(#cp141414)"><path d="M 18 304 C 120 292, 260 278, 392 268" fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="round"/>
+  <path d="M 18 304 C 120 292, 260 278, 392 268" fill="none" stroke="#c4c4c4" stroke-width="32" stroke-linecap="round"/>
+  <path d="M 40 298 C 120 290, 200 282, 260 278 M 290 276 C 330 273, 360 271, 378 270" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 70 310 C 110 306, 150 302, 180 300" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/></g>
+  <!-- tête de profil : large, museau arrondi, œil énorme -->
+  <path d="M 438 160 C 468 138, 522 136, 548 160 C 560 172, 556 190, 540 196 C 512 206, 470 206, 438 192 C 430 186, 430 166, 438 160 Z" fill="#141414" stroke="#ffffff" stroke-width="7"/>
+  <path d="M 549 181 C 528 190, 496 192, 470 188" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="507" cy="160" r="25" fill="#ffffff"/><circle cx="507" cy="160" r="19" fill="#141414"/>
+  <ellipse cx="507" cy="160" rx="4.2" ry="14" fill="#ffffff"/>
+  <circle cx="541" cy="169" r="3.6" fill="#ffffff"/></svg>
