@@ -70,6 +70,8 @@ const ICON = {
   sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
   moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
   heart: '<svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 7.9 3.6 4.5 7 4.5c2 0 3.6 1.1 5 2.9 1.4-1.8 3-2.9 5-2.9 3.4 0 5.6 3.4 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>',
+  coral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c2.5 0 3.5-2 3.5-4.5S8 8 11 8s4 2 4 4.5 1.5 4.5 3.5 4.5H21"/><path d="M6.6 10.5l2.2 1M10 8.2l.6 2.4M13.8 8.6l-1 2.2M15 13l2.4-.6M17.4 16.2l1.1-2.2"/></svg>',
+  duel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="5"/><circle cx="16" cy="12" r="5"/></svg>',
   snake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c3 0 4-2 4-4s1-4 4-4 4 2 4 4-1 4 2 4 2-3 2-3"/><path d="M12 11c-2.5 0-4-1.5-4-3.5S9.5 4 12 4s4 1.5 4 3.5"/><path d="M14 5.5h.01"/></svg>',
 };
 
@@ -178,11 +180,21 @@ const LEVELS = {
 };
 const FORMATS = { noms: ['Photo → nom', 'Une photo : trouve son nom parmi 4'], photos: ['Nom → photo', 'Un nom : trouve la bonne photo parmi 4'] };
 const RYTHMES = { serie: ['Série', `${CFG.serieLength} questions`], chrono: ['Chrono', `${CFG.chronoSeconds} secondes`], survie: ['Survie', `${CFG.lives} vies`] };
-const isFree = (c = S) => c.level === 'maitre';
-function poolFor(cfg = S) { return SP.filter(s => hasPhoto(s) && (!cfg.groups.length || cfg.groups.includes(s.group)) && (!cfg.fams.length || cfg.fams.includes(s.family))); }
-function configKey(cfg = S) { return ['photo', isFree(cfg) ? 'saisie' : cfg.format, cfg.level, cfg.rythme, cfg.groups.length ? cfg.groups.slice().sort().join('+') : 'tous', cfg.fams.length ? cfg.fams.slice().sort().join('+') : 'toutes'].join('/'); }
+const SPECIAL = f => f === 'corail' || f === 'duel';
+const isFree = (c = S) => c.level === 'maitre' && !SPECIAL(c.format) && c.format !== 'photos';
+// Vrai ou faux corail : les Micrurus et les serpents qui les imitent
+const MIMES = ['rhinobothryum-lentiginosum', 'erythrolamprus-aesculapii', 'atractus-badius', 'atractus-latifrons', 'oxyrhopus-aff-vanidicus', 'hydrops-triangularis', 'hydrodynastes-bicinctus', 'oxyrhopus-petolarius', 'oxyrhopus-aff-petolarius', 'oxyrhopus-occipitalis', 'anilius-scytale'];
+const isCoral = s => s.genus === 'Micrurus';
+function duelMates(s) { return SP.filter(o => o.id !== s.id && hasPhoto(o) && (s.conf.includes(o.id) || o.conf.includes(s.id))); }
+const SPECIAL_LBL = { corail: 'Vrai ou faux corail', duel: 'Lui ou lui ?' };
+function poolFor(cfg = S) {
+  if (cfg.format === 'corail') return SP.filter(s => hasPhoto(s) && (isCoral(s) || MIMES.includes(s.id)));
+  if (cfg.format === 'duel') return SP.filter(s => hasPhoto(s) && duelMates(s).length);
+  return SP.filter(s => hasPhoto(s) && (!cfg.groups.length || cfg.groups.includes(s.group)) && (!cfg.fams.length || cfg.fams.includes(s.family))); }
+function configKey(cfg = S) { if (SPECIAL(cfg.format)) return [cfg.format, cfg.rythme].join('/'); return ['photo', isFree(cfg) ? 'saisie' : cfg.format, cfg.level, cfg.rythme, cfg.groups.length ? cfg.groups.slice().sort().join('+') : 'tous', cfg.fams.length ? cfg.fams.slice().sort().join('+') : 'toutes'].join('/'); }
 function configLabel(key) {
   if (key === 'daily') return 'Défi du jour';
+  { const [f, r] = key.split('/'); if (SPECIAL_LBL[f]) return `${SPECIAL_LBL[f]} · ${RYTHMES[r] ? RYTHMES[r][0] : r}`; }
   const [, format, level, rythme, groups, fams] = key.split('/');
   const parts = [];
   if (format !== 'saisie' && FORMATS[format]) parts.push(FORMATS[format][0]);
@@ -229,19 +241,21 @@ function viewHome() {
   </section>
   ${dailyCardHTML()}
   <div class="modes" role="group" aria-label="Type de jeu">
-    <button type="button" class="mode" data-fmt="noms" aria-pressed="${S.format === 'noms' && !isFree()}"><span class="ico">${ICON.eye}</span><b>Photo</b><span>Une photo de terrain, à toi de nommer l'espèce.</span></button>
-    <button type="button" class="mode alt" data-fmt="photos" aria-pressed="${S.format === 'photos' && !isFree()}"><span class="ico">${ICON.name}</span><b>Nom → photo</b><span>Un nom, à toi de trouver la bonne photo parmi 4.</span></button>
+    <button type="button" class="mode" data-fmt="noms" aria-pressed="${S.format === 'noms'}"><span class="ico">${ICON.eye}</span><b>Photo</b><span>Une photo de terrain, à toi de nommer l'espèce.</span></button>
+    <button type="button" class="mode alt" data-fmt="photos" aria-pressed="${S.format === 'photos'}"><span class="ico">${ICON.name}</span><b>Nom → photo</b><span>Un nom, à toi de trouver la bonne photo parmi 4.</span></button>
+    <button type="button" class="mode cor" data-fmt="corail" aria-pressed="${S.format === 'corail'}"><span class="ico">${ICON.coral}</span><b>Vrai ou faux corail</b><span>Serpent corail venimeux ou imitateur ? Le bon réflexe sur le terrain.</span></button>
+    <button type="button" class="mode duo" data-fmt="duel" aria-pressed="${S.format === 'duel'}"><span class="ico">${ICON.duel}</span><b>Lui ou lui ?</b><span>Deux espèces qu'on confond : trouve la bonne et apprends à les séparer.</span></button>
   </div>
   <section class="setup" aria-label="Réglages de la partie">
-    <div class="opt"><span class="lbl">Difficulté</span>${segHTML('seg-level', S.format === 'photos' ? { decouverte: LEVELS.decouverte, inter: LEVELS.inter, expert: LEVELS.expert } : LEVELS, S.level, S.format === 'photos' ? '' : 'wrap4')}<p class="desc">${LEVELS[S.level][1]}.</p></div>
+    ${SPECIAL(S.format) ? `<p class="desc" style="margin:0">${S.format === 'corail' ? 'Les 6 <i>Micrurus</i> de Guyane mélangés à leurs imitateurs : <i>Erythrolamprus</i>, <i>Oxyrhopus</i>, <i>Atractus</i>, <i>Anilius</i>… Après chaque réponse, les critères pour ne plus te tromper.' : 'Une photo, deux noms : l\'espèce et sa principale confusion d\'après les guides. Après chaque réponse, les critères des deux espèces côte à côte.'}</p>` : `<div class="opt"><span class="lbl">Difficulté</span>${segHTML('seg-level', S.format === 'photos' ? { decouverte: LEVELS.decouverte, inter: LEVELS.inter, expert: LEVELS.expert } : LEVELS, S.level, S.format === 'photos' ? '' : 'wrap4')}<p class="desc">${LEVELS[S.level][1]}.</p></div>`}
     <div class="opt"><span class="lbl">Rythme</span>${segHTML('seg-rythme', RYTHMES, S.rythme, 'withsub')}</div>
-    <div class="opt"><span class="lbl">Groupes</span><div class="chips" id="grpchips">
+    ${SPECIAL(S.format) ? '' : `<div class="opt"><span class="lbl">Groupes</span><div class="chips" id="grpchips">
       <button type="button" class="chip" data-g="" aria-pressed="${!S.groups.length}">Tous</button>
       ${Object.entries(GROUPES).map(([g, t]) => { const c = SP.filter(s => s.group === g && hasPhoto(s)).length; return c ? `<button type="button" class="chip" data-g="${g}" aria-pressed="${S.groups.includes(g)}">${t}<span class="n">${c}</span></button>` : ''; }).join('')}</div></div>
     <div class="opt"><details class="fams"${S.fams.length ? ' open' : ''}><summary><span class="lbl" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Familles</span><span class="muted" style="font-weight:600;font-size:.9rem;margin-left:auto">${S.fams.length ? S.fams.length + ' sélectionnée(s)' : 'Toutes'}</span></summary>
       <div class="chips" id="famchips">${famsShown.map(f => { const c = poolFor({ ...S, fams: [f] }).length; return c ? `<button type="button" class="chip" data-f="${esc(f)}" aria-pressed="${S.fams.includes(f)}">${esc(f)}<span class="n">${c}</span></button>` : ''; }).join('')}</div>
       ${S.fams.length ? '<div style="margin-top:8px"><button type="button" class="btn ghost" id="famreset">Toutes les familles</button></div>' : ''}
-    </details></div>
+    </details></div>`}
     <div class="toggles">
       <label class="toggle"><span>Photos de terrain<small>Photos variées d'iNaturalist prises en Guyane (qualité recherche)</small></span><input type="checkbox" class="switch" id="t-terrain"${S.terrain ? ' checked' : ''}></label>
       ${S.format === 'noms' ? `<label class="toggle"><span>Photo qui se dévoile<small>La photo est floue puis devient nette : plus tu réponds tôt, plus tu gagnes de points</small></span><input type="checkbox" class="switch" id="t-reveal"${S.reveal ? ' checked' : ''}></label>` : ''}
@@ -249,15 +263,15 @@ function viewHome() {
       <label class="toggle"><span>Révision ciblée<small>Les espèces que tu rates reviennent plus souvent</small></span><input type="checkbox" class="switch" id="t-rev"${S.revision ? ' checked' : ''}></label>
     </div>
     <div class="start"><div><div class="count">${n} espèce${n > 1 ? 's' : ''} dans cette partie</div>${best ? `<div class="best">Record : ${best} pts</div>` : ''}</div>
-      <button type="button" class="btn primary big" id="go"${n < 4 && !isFree() ? ' disabled' : ''}>Jouer</button></div>
-    ${n < 4 && !isFree() ? '<p class="desc">Ajoute un groupe ou une famille : il faut au moins 4 espèces pour les propositions.</p>' : ''}
+      <button type="button" class="btn primary big" id="go"${n < (SPECIAL(S.format) ? 2 : 4) && !isFree() ? ' disabled' : ''}>Jouer</button></div>
+    ${n < (SPECIAL(S.format) ? 2 : 4) && !isFree() ? '<p class="desc">Ajoute un groupe ou une famille : il faut au moins 4 espèces pour les propositions.</p>' : ''}
   </section>`;
   $$('.mode', app).forEach(b => b.onclick = () => { S.format = b.dataset.fmt; if (S.format === 'photos' && S.level === 'maitre') S.level = 'expert'; saveSettings(); viewHome(); });
   bindDailyCard();
   const seg = (id, key) => { const el = $('#' + id); if (el) el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[key] = b.dataset.v; saveSettings(); viewHome(); }; };
   seg('seg-level', 'level'); seg('seg-rythme', 'rythme');
-  $('#grpchips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; const g = b.dataset.g; S.groups = !g ? [] : S.groups.includes(g) ? S.groups.filter(x => x !== g) : [...S.groups, g]; S.fams = S.fams.filter(f => SP.some(s => s.family === f && (!S.groups.length || S.groups.includes(s.group)))); saveSettings(); viewHome(); };
-  $('#famchips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; const f = b.dataset.f; S.fams = S.fams.includes(f) ? S.fams.filter(x => x !== f) : [...S.fams, f]; saveSettings(); viewHome(); $('details.fams').open = true; };
+  if ($('#grpchips')) $('#grpchips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; const g = b.dataset.g; S.groups = !g ? [] : S.groups.includes(g) ? S.groups.filter(x => x !== g) : [...S.groups, g]; S.fams = S.fams.filter(f => SP.some(s => s.family === f && (!S.groups.length || S.groups.includes(s.group)))); saveSettings(); viewHome(); };
+  if ($('#famchips')) $('#famchips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; const f = b.dataset.f; S.fams = S.fams.includes(f) ? S.fams.filter(x => x !== f) : [...S.fams, f]; saveSettings(); viewHome(); $('details.fams').open = true; };
   const fr = $('#famreset'); if (fr) fr.onclick = () => { S.fams = []; saveSettings(); viewHome(); };
   const tg = (id, key) => { const el = $('#' + id); if (el) el.onchange = () => { S[key] = el.checked; saveSettings(); }; };
   tg('t-vern', 'vern'); tg('t-rev', 'revision'); tg('t-reveal', 'reveal'); tg('t-terrain', 'terrain');
@@ -302,6 +316,8 @@ function weightedPick(pool, avoid, cfg) {
   let tot = arr.reduce((a, s) => a + weight(s, cfg), 0), r = Math.random() * tot;
   for (const s of arr) { r -= weight(s, cfg); if (r <= 0) return s; } return arr[arr.length - 1];
 }
+function corailPick(pool, avoid, cfg) { const side = Math.random() < .5; const p = pool.filter(s => isCoral(s) === side); return weightedPick(p.length ? p : pool, avoid, cfg); }
+function corailDeck(pool, cfg) { const d = [], last = []; for (let i = 0; i < CFG.serieLength; i++) { const s = corailPick(pool, new Set(last), cfg); d.push(s.id); last.push(s.id); if (last.length > 5) last.shift(); } return d; }
 function buildDeck(pool, n, cfg) {
   const deck = [], used = new Set(); n = Math.min(n, pool.length);
   while (deck.length < n) { const s = weightedPick(pool, used, cfg); used.add(s.id); deck.push(s.id); }
@@ -332,7 +348,7 @@ function startGame(onlyIds) {
   const pool = onlyIds ? full.filter(s => onlyIds.includes(s.id)) : full;
   if (!pool.length) return toast('Aucune espèce ne correspond à ces réglages.');
   const cfg = { ...S };
-  Game = newGame(cfg, { key: configKey(), pool, distractPool: SP.filter(hasPhoto), deck: S.rythme === 'serie' ? buildDeck(pool, onlyIds ? pool.length : CFG.serieLength, cfg) : [], revisit: !!onlyIds });
+  Game = newGame(cfg, { key: configKey(), pool, distractPool: SP.filter(hasPhoto), deck: S.rythme === 'serie' ? (cfg.format === 'corail' && !onlyIds ? corailDeck(pool, cfg) : buildDeck(pool, onlyIds ? pool.length : CFG.serieLength, cfg)) : [], revisit: !!onlyIds });
   enterGame();
   for (let k = 0; k < 3; k++) planFor(Game, k);
   renderGameShell();
@@ -382,9 +398,11 @@ function nextQuestion() {
     const q = g.fixed[g.idx]; g.cfg.format = q.format; cur = BYID[q.id]; g.choices = q.choices.map(id => BYID[id]);
   } else {
     if (g.cfg.rythme === 'serie') { if (g.idx >= g.deck.length) return finish(); cur = BYID[g.deck[g.idx]]; }
-    else { cur = weightedPick(g.pool, new Set(g.recent), g.cfg); g.recent.push(cur.id); if (g.recent.length > Math.min(12, g.pool.length - 1)) g.recent.shift(); g.deck[g.idx] = cur.id; }
+    else { cur = (g.cfg.format === 'corail' ? corailPick : weightedPick)(g.pool, new Set(g.recent), g.cfg); g.recent.push(cur.id); if (g.recent.length > Math.min(12, g.pool.length - 1)) g.recent.shift(); g.deck[g.idx] = cur.id; }
     if (!g.dpool) { const r = g.distractPool.filter(s => (!g.cfg.groups.length || g.cfg.groups.includes(s.group)) && (!g.cfg.fams.length || g.cfg.fams.includes(s.family))); g.dpool = r.length >= 4 ? r : g.distractPool; }
-    g.choices = isFree(g.cfg) ? [] : distractors(cur, g.dpool, g.cfg.level);
+    if (g.cfg.format === 'corail') g.choices = [{ id: 'vrai' }, { id: 'faux' }];
+    else if (g.cfg.format === 'duel') { const m = duelMates(cur); g.mate = m[Math.random() * m.length | 0]; g.choices = shuffle([cur, g.mate]); }
+    else g.choices = isFree(g.cfg) ? [] : distractors(cur, g.dpool, g.cfg.level);
   }
   g.cur = cur; g.hints = 0; g.locked = false;
   updateHUD(); renderStage(); renderAnswers(); $('#fb').innerHTML = '';
@@ -425,12 +443,13 @@ function hintList(s) {
   return h;
 }
 function hintBarHTML() {
-  const g = Game, hl = hintList(g.cur);
+  const g = Game; if (g.cfg.format === 'corail') return '<div class="hintbar"><button type="button" class="hint-btn" id="hintbtn" hidden></button></div>';
+  const hl = hintList(g.cur);
   return `<div class="hintbar"><button type="button" class="hint-btn" id="hintbtn"${g.hints >= hl.length || g.locked ? ' disabled' : ''}>Indice${g.hints < hl.length ? ` (−${CFG.hintCost} pts)` : ''}</button>
     <div class="hints">${hl.slice(0, g.hints).map(([k, v]) => `<div${k === 'Répartition' ? ' class="hint-mapbox"' : ''}><b>${k}</b>${['Genre', 'Répartition'].includes(k) ? v + (k === 'Répartition' ? '<span class="hint-cap">Localités iNaturalist</span>' : '') : esc(v)}</div>`).join('')}</div></div>`;
 }
 function useHint() {
-  const g = Game; if (g.locked) return; const hl = hintList(g.cur); if (g.hints >= hl.length) return;
+  const g = Game; if (g.locked || g.cfg.format === 'corail') return; const hl = hintList(g.cur); if (g.hints >= hl.length) return;
   g.hints++; const bar = $('.hintbar'); bar.outerHTML = hintBarHTML(); $('#hintbtn').onclick = useHint;
 }
 function renderAnswers() {
@@ -442,9 +461,14 @@ function renderAnswers() {
     setTimeout(() => { const i = $('#freein'); if (i && matchMedia('(hover:hover)').matches) i.focus(); }, 30);
     return;
   }
+  if (g.cfg.format === 'corail') {
+    box.innerHTML = `<div class="choices names two coral-q"><button type="button" class="choice" data-id="vrai"><span class="k">1</span><span><span class="nm">Vrai corail</span><span class="vn"><i>Micrurus</i> · venin fort</span></span></button><button type="button" class="choice" data-id="faux"><span class="k">2</span><span><span class="nm">Faux corail</span><span class="vn">Un imitateur</span></span></button></div>`;
+    box.onclick = e => { const b = e.target.closest('.choice'); if (b && !g.locked) answer(b.dataset.id); };
+    return;
+  }
   const pics = g.cfg.format === 'photos';
   if (pics) g.choicePics = g.choices.map(s => INAT.pick(s, g.cfg) || s.photos[0]);
-  box.innerHTML = `<div class="choices ${pics ? 'pics' : 'names'}">` + g.choices.map((s, i) => pics
+  box.innerHTML = `<div class="choices ${pics ? 'pics' : 'names'}${g.choices.length === 2 ? ' two' : ''}">` + g.choices.map((s, i) => pics
     ? `<button type="button" class="choice" data-id="${s.id}"><span class="ph insitu-mini" style="--insitu:url('${imgURL(g.choicePics[i], 'small')}')"><img src="${imgURL(g.choicePics[i])}" alt="Proposition ${i + 1}"><span class="k">${i + 1}</span></span><span class="cap"></span></button>`
     : `<button type="button" class="choice" data-id="${s.id}"><span class="k">${i + 1}</span><span><span class="nm">${sciHTML(s.name)}</span>${g.cfg.vern ? `<span class="vn">${esc(s.vern)}</span>` : ''}</span></button>`).join('') + '</div>';
   box.onclick = e => { const b = e.target.closest('.choice'); if (b && !g.locked) answer(b.dataset.id); };
@@ -460,7 +484,7 @@ function answerFree(txt) {
 }
 function answer(pick, info = {}) {
   const g = Game; if (!g || g.locked) return; g.locked = true;
-  const c = g.cur, ok = pick === c.id, half = pick === '__genus';
+  const c = g.cur, expect = g.cfg.format === 'corail' ? (isCoral(c) ? 'vrai' : 'faux') : c.id, ok = pick === expect, half = pick === '__genus';
   g.answered++;
   Store.record(c.id, ok);
   let pts = 0;
@@ -481,8 +505,8 @@ function answer(pick, info = {}) {
   updateHUD();
   $$('.choice').forEach(b => {
     b.disabled = true;
-    if (b.dataset.id === c.id) b.classList.add('right'); else if (b.dataset.id === pick) b.classList.add('wrong'); else b.classList.add('dim');
-    const cap = $('.cap', b); if (cap) { const s = BYID[b.dataset.id]; cap.innerHTML = `<span class="nm">${sciHTML(s.name)}</span><span class="vn">${esc(s.vern)}</span>`; }
+    if (b.dataset.id === expect) b.classList.add('right'); else if (b.dataset.id === pick) b.classList.add('wrong'); else b.classList.add('dim');
+    const cap = $('.cap', b); if (cap && BYID[b.dataset.id]) { const s = BYID[b.dataset.id]; cap.innerHTML = `<span class="nm">${sciHTML(s.name)}</span><span class="vn">${esc(s.vern)}</span>`; }
   });
   const fi = $('#freein'); if (fi) { fi.disabled = true; $$('#freef button').forEach(b => b.disabled = true); }
   const hb = $('#hintbtn'); if (hb) hb.disabled = true;
@@ -495,6 +519,15 @@ function showFeedback(ok, half, pick, info, pts) {
   const verdict = ok ? (info.typo ? 'Correct, attention à l\'orthographe' : ['Bien vu !', 'Exact !', 'Bravo !', 'C\'est ça !'][Math.random() * 4 | 0]) : half ? 'Le genre est bon !' : 'Raté…';
   let detail = '';
   if (!ok && pick && BYID[pick]) detail = `Tu as répondu ${sciHTML(BYID[pick].name)}.`;
+  let extra = '';
+  if (g.cfg.format === 'corail') {
+    detail = isCoral(c) ? '<b>C\'est un vrai corail</b> : venimeux, venin fort.' : `<b>C'est un faux corail</b> : ${esc((STATUTS.dg.v[c.dg] || ['non venimeux'])[0].toLowerCase())}.`;
+    if (c.crit.length) extra = `<div class="duelcrit one"><div><b>À retenir</b><ul>${c.crit.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>`;
+  }
+  if (g.cfg.format === 'duel' && g.mate) {
+    const col = s => `<div><b>${sciHTML(s.name)}</b>${s.crit.length ? `<ul>${s.crit.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="small">Pas encore de critères.</p>'}</div>`;
+    extra = `<div class="duelcrit"><span class="eyebrow">Comment les distinguer</span>${col(c)}${col(g.mate)}</div>`;
+  }
   else if (!ok && info.typed) detail = `Ta réponse : « ${esc(info.typed)} ».`;
   if (info.typo) detail = `Tu as écrit « ${esc(info.typo)} ».`;
   const showImg = g.cfg.format === 'photos' && c.photos.length;
@@ -505,7 +538,7 @@ function showFeedback(ok, half, pick, info, pts) {
       <div class="big">${sciHTML(c.name)}</div><div class="sub">${esc(c.vern)} · ${esc(c.family)}</div>
       ${c.old ? `<div class="sub" style="color:var(--glow)">Ancien nom : ${sciHTML(c.old)}</div>` : ''}
       ${c.dg && ['L', 'F'].includes(c.dg) ? `<div class="sub danger">${FANGS} ${c.dg === 'F' ? 'Venin fort' : 'Venin léger'}</div>` : ''}
-      ${detail ? `<div class="sub">${detail}</div>` : ''}</div></div>
+      ${detail ? `<div class="sub">${detail}</div>` : ''}</div></div>${extra}
     ${fast ? '' : `<div class="row">
       <button type="button" class="btn primary" id="next">${g.cfg.rythme === 'survie' && g.lives <= 0 && !g.fixed ? 'Voir le résultat' : 'Suivant'}</button>
       <button type="button" class="btn ghost" id="fiche">Fiche</button></div>`}
@@ -520,7 +553,9 @@ function finish() {
   if (g.cfg.rythme === 'survie') Store.bump('survie', g.correct);
   if (g.cfg.rythme === 'chrono') Store.bump('chrono', g.correct);
   Store.bump('streak', g.bestStreak);
-  if (g.cfg.rythme === 'serie' && !g.revisit && g.answered >= CFG.serieLength && g.correct === g.answered) Store.bump('perfect', 1);
+  if (g.cfg.format === 'corail') Store.bump('corail', g.bestStreak);
+  if (g.cfg.format === 'duel' && g.cfg.rythme === 'serie' && !g.revisit && g.answered >= CFG.serieLength && g.correct === g.answered) Store.bump('duel', 1);
+  if (!SPECIAL(g.cfg.format) && g.cfg.rythme === 'serie' && !g.revisit && g.answered >= CFG.serieLength && g.correct === g.answered) Store.bump('perfect', 1);
   if (isFree(g.cfg) && g.correct >= 10) Store.bump('maitre', g.correct);
   const prev = Store.data.best[g.key] || 0, record = g.score > prev && g.score > 0 && !g.revisit;
   if (record) { Store.data.best[g.key] = g.score; Store.save(); }
@@ -770,6 +805,8 @@ function badgeDefs() {
     ['lezards', 'Roi des lézards', `Maîtriser les ${grp('lezard').length} lézards`, () => grp('lezard').length && mastered(grp('lezard')) >= grp('lezard').length],
     ['tortues', 'Pas si lent', `Maîtriser les ${grp('tortue').length} tortues`, () => grp('tortue').length && mastered(grp('tortue')) >= grp('tortue').length],
     ['caimans', 'Regard de caïman', 'Maîtriser les 4 caïmans', () => grp('croco').length && mastered(grp('croco')) >= grp('croco').length],
+    ['corail', 'Pas dupe', '20 bonnes réponses de suite en Vrai ou faux corail', () => (R.corail || 0) >= 20],
+    ['duel', 'Œil affûté', 'Une série Lui ou lui ? sans erreur', () => (R.duel || 0) >= 1],
     ['serie10', 'Sur une lancée', '10 bonnes réponses de suite', () => (R.streak || 0) >= 10],
     ['sansfaute', 'Sans faute', `Une série de ${CFG.serieLength} questions sans erreur`, () => (R.perfect || 0) >= 1],
     ['maitre', 'Nomenclateur', '10 bonnes réponses en niveau Maître', () => (R.maitre || 0) >= 10],
