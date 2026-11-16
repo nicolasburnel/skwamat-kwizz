@@ -38,7 +38,8 @@ for r in rows:
     tphotos, obs = [], []
     for tid in ids:
         t = (get(f'taxa/{tid}').get('results') or [{}])[0]
-        for tp in t.get('taxon_photos') or []:
+        # pour un taxon « aff. », les photos de présentation iNat montrent l'espèce nominale : on ne garde que la Guyane
+        for tp in ([] if ' aff.' in r['nom'] or ' cf.' in r['nom'] else t.get('taxon_photos') or []):
             p = tp.get('photo') or {}
             if p.get('license_code') in OK: tphotos.append([p['id'], ext(p.get('url')), clean(p.get('attribution')), p['license_code'], 0])
         for page in (1, 2, 3):

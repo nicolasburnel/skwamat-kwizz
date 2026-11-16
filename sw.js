@@ -1,8 +1,8 @@
 // Skwamat Kwizz — fonctionnement hors connexion.
 // Augmentez VERSION à chaque modification du code (css/js/html) pour forcer la mise à jour.
-const VERSION = 'sk-app-v2';
+const VERSION = 'sk-app-v3';
 const MEDIA = 'sk-media-v1';
-const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'data/especes.csv', 'data/medias.json', 'data/inat.json', 'manifest.webmanifest',
+const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'data/especes.csv', 'data/medias.json', 'data/inat.json', 'data/photos.csv', 'manifest.webmanifest',
   'assets/icon-sk-192.png', 'assets/icon-sk-512.png', 'assets/logo-sk-noir.png', 'assets/logo-sk-blanc.png', 'assets/mark-sk-noir.png', 'assets/mark-sk-blanc.png',
   'assets/fonts/nunito-latin-400-normal.woff2', 'assets/fonts/nunito-latin-400-italic.woff2', 'assets/fonts/nunito-latin-600-normal.woff2',
   'assets/fonts/nunito-latin-600-italic.woff2', 'assets/fonts/nunito-latin-700-normal.woff2', 'assets/fonts/nunito-latin-800-normal.woff2',

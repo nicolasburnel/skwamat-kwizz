@@ -1,6 +1,9 @@
 name: Photos et cartes iNaturalist
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['data/especes.csv', 'tools/build_inat.py']
   schedule:
     - cron: '17 4 1 * *'   # le 1er de chaque mois
 permissions:

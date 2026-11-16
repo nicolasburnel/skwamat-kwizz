@@ -91,26 +91,35 @@ const Store = {
 /* ---------------- données ---------------- */
 const GROUPES = { serpent: 'Serpents', amphisbene: 'Amphisbènes', lezard: 'Lézards', tortue: 'Tortues', croco: 'Caïmans' };
 const GROUPE_1 = { serpent: 'serpent', amphisbene: 'amphisbène', lezard: 'lézard', tortue: 'tortue', croco: 'caïman' };
-let SP = [], BYID = {}, FAMS = [], MEDIA = {};
+let SP = [], BYID = {}, FAMS = [], MEDIA = {}, LOCAL = [];
 async function loadData() {
-  const [res, med] = await Promise.all([fetch('data/especes.csv', { cache: 'no-cache' }), fetch('data/medias.json', { cache: 'no-cache' }).catch(() => null)]);
+  const [res, med, loc] = await Promise.all([fetch('data/especes.csv', { cache: 'no-cache' }), fetch('data/medias.json', { cache: 'no-cache' }).catch(() => null), fetch('data/photos.csv', { cache: 'no-cache' }).catch(() => null)]);
   const rows = parseCSV(await res.text());
+  try { LOCAL = loc && loc.ok ? parseCSV(await loc.text()) : []; } catch (e) { LOCAL = []; }
   try { MEDIA = med && med.ok ? await med.json() : {}; } catch (e) { MEDIA = {}; }
   SP = rows.map(r => ({
     id: r.id, name: r.nom, vern: r.nom_vernaculaire, group: r.groupe, family: r.famille, old: r.ancien_nom, inat: r.inat_id,
-    habitat: r.habitat, size: r.taille, ab: r.abondance || '', mo: list(r.moeurs.replace(/\s*\/\s*/g, '|')), act: r.activite || '', ui: r.uicn || '', pr: r.protection || '', dg: r.danger || '', exo: r.exotique === 'oui',
+    habitat: r.habitat, size: r.taille, ab: r.abondance || '', mo: list(r.moeurs.replace(/\s*\/\s*/g, '|')), act: r.activite || '', ui: r.uicn || '', pr: r.protection || '', dg: r.venin || '', exo: r.exotique === 'oui',
     crit: list(r.criteres), confNames: list(r.confusions), comment: r.commentaire, src: r.source,
   })).filter(s => s.id && s.name);
-  SP.forEach(s => { const m = MEDIA[s.id] || {}; s.photos = (m.ph || []).map(p => ({ id: p[0], ext: p[1], attr: p[2], lic: p[3], obs: p[4] })); s.pts = m.pt || []; });
+  SP.forEach(s => {
+    const m = MEDIA[s.id] || {}, own = LOCAL.filter(l => l.id === s.id && l.fichier);
+    const mine = own.map(l => ({ local: l.fichier, attr: l.auteur, lic: 'perm' }));
+    s.noInat = own.some(l => l.remplace_inat === 'oui');
+    s.photos = mine.concat(s.noInat ? [] : (m.ph || []).map(p => ({ id: p[0], ext: p[1], attr: p[2], lic: p[3], obs: p[4] })));
+    s.pts = s.noInat ? [] : m.pt || [];
+  });
   BYID = Object.fromEntries(SP.map(s => [s.id, s]));
   const byName = {}; SP.forEach(s => { byName[norm(s.name)] = s.id; if (s.old) list(s.old.replace(/\s*\/\s*/g, '|')).forEach(o => byName[norm(o)] = s.id); });
   SP.forEach(s => { s.genus = s.name.split(' ')[0]; s.conf = s.confNames.map(n => byName[norm(n.replace(/\(.*?\)/g, ''))]).filter(id => id && id !== s.id); });
   FAMS = [...new Set(SP.map(s => s.family))].sort((a, b) => a.localeCompare(b));
 }
-const LIC = { 'cc0': 'CC0', 'cc-by': 'CC BY', 'cc-by-nc': 'CC BY-NC', 'cc-by-sa': 'CC BY-SA', 'cc-by-nc-sa': 'CC BY-NC-SA' };
-const imgURL = (p, size = 'medium') => `https://inaturalist-open-data.s3.amazonaws.com/photos/${p.id}/${size}.${p.ext}`;
+const LIC = { perm: 'avec son autorisation', 'cc0': 'CC0', 'cc-by': 'CC BY', 'cc-by-nc': 'CC BY-NC', 'cc-by-sa': 'CC BY-SA', 'cc-by-nc-sa': 'CC BY-NC-SA' };
+const imgURL = (p, size = 'medium') => p.local ? `assets/photos/${['square', 'small'].includes(size) ? p.local.replace(/\.jpg$/, '-mini.jpg') : p.local}` : `https://inaturalist-open-data.s3.amazonaws.com/photos/${p.id}/${size}.${p.ext}`;
 const hasPhoto = s => s.photos.length > 0;
 const credit = p => `© ${p.attr} · ${LIC[p.lic] || p.lic}`;
+const photoLink = p => p.local ? '' : p.obs ? 'https://www.inaturalist.org/observations/' + p.obs : 'https://www.inaturalist.org/photos/' + p.id;
+const creditTxt = p => credit(p) + (p.local ? '' : ' · iNaturalist');
 
 /* ---------------- statuts et pictogrammes ---------------- */
 const STATUTS = {
@@ -119,7 +128,7 @@ const STATUTS = {
   act: { titre: 'Activité', v: { J: ['Diurne', '#d99a00'], N: ['Nocturne', '#3b4a8c'], JN: ['Diurne et nocturne', '#6a5a9c'] } },
   ui: { titre: 'Liste rouge UICN (Guyane)', v: { CR: ['En danger critique', '#d81e05'], EN: ['En danger', '#fc7f3f'], VU: ['Vulnérable', '#f9e814'], NT: ['Quasi menacée', '#cce226'], LC: ['Préoccupation mineure', '#60c659'], DD: ['Données insuffisantes', '#d1d1c6'], NA: ['Non applicable', '#ffffff'], NE: ['Non évaluée', '#ffffff'] } },
   pr: { titre: 'Protection', v: { P: ['Protégée', '#5aae2e'], H: ['Protégée avec son habitat', '#0b7a2a'] } },
-  dg: { titre: 'Venin', v: { N: ['Non venimeux', '#8a8f8c'], VI: ['Venimeux, inoffensif', '#1f8f2e'], VM: ['Venimeux, danger modéré', '#ee7a1b'], VF: ['Venimeux, danger fort', '#e0230c'] } },
+  dg: { titre: 'Venin', v: { N: ['Non venimeux', '#8a8f8c'], NM: ['Venimeux, non mordeur', '#1f8f2e'], L: ['Venimeux, venin léger', '#ee7a1b'], F: ['Venimeux, venin fort', '#e0230c'] } },
 };
 const MOEURS_ICON = {
   T: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M6 19c0-2 1-3.5 3-4M12 19c0-3 1.2-5 3.5-6M18 19c0-1.6-.6-2.8-1.6-3.6"/><circle cx="9.5" cy="9" r="2.2"/></svg>',
@@ -263,7 +272,7 @@ const INAT = {
     if (!this.loading) this.loading = fetch('data/inat.json').then(r => (r.ok ? r.json() : {})).then(d => (this.data = d)).catch(() => (this.data = {}));
     return this.loading;
   },
-  list(s) { return (this.data && this.data[s.id]) || []; },
+  list(s) { return s.noInat ? [] : (this.data && this.data[s.id]) || []; },
   toPhoto: q => ({ id: q[0], ext: q[1], obs: q[2], attr: q[3], lic: q[4] }),
   pick(s, cfg, avoid) { // photo de terrain si possible, sinon photo de présentation
     const L = cfg.terrain !== false ? this.list(s).map(this.toPhoto) : [];
@@ -400,7 +409,7 @@ function renderStage() {
     if (Game !== g || g.idx !== q || g.photoTok !== tok || g.cur !== cur || !$('.pic')) return;
     if (!ok && tries < 2) return show(INAT.pick(cur, g.cfg, ph.id), tries + 1);
     g.shown = ph; box.classList.remove('loading'); im.src = url; box.style.setProperty('--insitu', `url("${url}")`);
-    const cr = $('.pic-credit'); cr.href = ph.obs ? 'https://www.inaturalist.org/observations/' + ph.obs : 'https://www.inaturalist.org/photos/' + ph.id; cr.textContent = credit(ph) + ' · iNaturalist'; cr.hidden = false; startReveal();
+    const cr = $('.pic-credit'); const lk = photoLink(ph); if (lk) cr.href = lk; else cr.removeAttribute('href'); cr.textContent = creditTxt(ph); cr.hidden = false; startReveal();
   };
   show(p);
   $('#other').onclick = () => { box.classList.add('loading'); show(INAT.pick(cur, g.cfg, g.shown && g.shown.id)); };
@@ -495,7 +504,7 @@ function showFeedback(ok, half, pick, info, pts) {
     <div class="who">${showImg ? `<img src="${imgURL(c.photos[0], 'small')}" alt="">` : ''}<div>
       <div class="big">${sciHTML(c.name)}</div><div class="sub">${esc(c.vern)} · ${esc(c.family)}</div>
       ${c.old ? `<div class="sub" style="color:var(--glow)">Ancien nom : ${sciHTML(c.old)}</div>` : ''}
-      ${c.dg && ['VM', 'VF'].includes(c.dg) ? `<div class="sub danger">${FANGS} ${esc(STATUTS.dg.v[c.dg][0])}</div>` : ''}
+      ${c.dg && ['L', 'F'].includes(c.dg) ? `<div class="sub danger">${FANGS} ${c.dg === 'F' ? 'Venin fort' : 'Venin léger'}</div>` : ''}
       ${detail ? `<div class="sub">${detail}</div>` : ''}</div></div>
     ${fast ? '' : `<div class="row">
       <button type="button" class="btn primary" id="next">${g.cfg.rythme === 'survie' && g.lives <= 0 && !g.fixed ? 'Voir le résultat' : 'Suivant'}</button>
@@ -585,14 +594,14 @@ function openSheet(id) {
   const back = document.createElement('div'); back.className = 'sheet-back';
   const P = s.photos;
   back.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(s.name)}">
-    <div class="gal">${P.length ? `<div class="main insitu" id="galbox" style="--insitu:url('${imgURL(P[0], 'small')}')"><img id="galimg" src="${imgURL(P[0], 'large')}" alt="${esc(s.name)}"><a class="pic-credit" id="galcred" target="_blank" rel="noopener" href="https://www.inaturalist.org/photos/${P[0].id}">${esc(credit(P[0]))} · iNaturalist</a></div>
+    <div class="gal">${P.length ? `<div class="main insitu" id="galbox" style="--insitu:url('${imgURL(P[0], 'small')}')"><img id="galimg" src="${imgURL(P[0], 'large')}" alt="${esc(s.name)}"><a class="pic-credit" id="galcred" target="_blank" rel="noopener"${photoLink(P[0]) ? ` href="${photoLink(P[0])}"` : ''}>${esc(creditTxt(P[0]))}</a></div>
       ${P.length > 1 ? `<div class="thumbs">${P.map((p, i) => `<button type="button" data-ph="${i}" aria-pressed="${i === 0}" aria-label="Photo ${i + 1}"><img src="${imgURL(p, 'square')}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}`
       : '<div class="main" style="aspect-ratio:3/1;color:#6d7f76;display:grid;place-items:center">Pas encore de photo sous licence libre</div>'}
       <button type="button" class="close" id="sclose" aria-label="Fermer">${ICON.close}</button></div>
     <div class="body">
       <div class="title"><span class="eyebrow">${esc(GROUPES[s.group] || '')} · ${esc(s.family)}</span><h2>${sciHTML(s.name)}</h2><span class="vn">${esc(s.vern)}</span>${s.old ? `<span class="old">Ancien nom : ${sciHTML(s.old)}</span>` : ''}</div>
       ${statutsHTML(s)}
-      ${s.pts.length ? `<div class="sheet-map">${mapSVG(s)}<div><b>Répartition en Guyane</b><span>${s.pts.length} localité${s.pts.length > 1 ? 's' : ''} d'observations iNaturalist validées (qualité recherche). La carte est incomplète : pour une vision plus juste, consulte <a href="${CFG.fauneGuyane}" target="_blank" rel="noopener">Faune-Guyane</a>.</span></div></div>` : `<div class="sheet-map nomap"><div><b>Répartition en Guyane</b><span>Pas encore d'observation localisée sur iNaturalist en Guyane.</span></div></div>`}
+      ${s.pts.length ? `<div class="sheet-map">${mapSVG(s)}<div><b>Répartition en Guyane</b><span>${s.pts.length} localité${s.pts.length > 1 ? 's' : ''} d'observations iNaturalist validées (qualité recherche). La carte est incomplète : pour une vision plus juste, consulte <a href="${CFG.fauneGuyane}" target="_blank" rel="noopener">Faune-Guyane</a>.</span></div></div>` : `<div class="sheet-map nomap"><div><b>Répartition en Guyane</b><span>${s.noInat ? 'Carte non affichée : les observations iNaturalist de cette espèce ne sont pas assez fiables.' : 'Pas encore d\'observation localisée sur iNaturalist en Guyane.'} Consulte <a href="${CFG.fauneGuyane}" target="_blank" rel="noopener">Faune-Guyane</a>.</span></div></div>`}
       <dl class="facts">${s.habitat ? `<dt>Habitat</dt><dd>${esc(s.habitat)}</dd>` : ''}${s.size ? `<dt>Taille</dt><dd>${esc(s.size)}</dd>` : ''}</dl>
       ${s.crit.length ? `<div><b>Critères d'identification</b><ul class="crit">${s.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
       ${s.conf.length ? `<div><b>Confusions possibles</b><div class="conf" style="margin-top:6px">${s.conf.map(c => `<button type="button" data-goto="${c}">${sciHTML(BYID[c].name)}</button>`).join('')}</div></div>` : ''}
@@ -603,7 +612,7 @@ function openSheet(id) {
   const close = () => { closeSheet(); if (location.hash.startsWith('#especes/')) history.replaceState(null, '', '#especes'); };
   back.onclick = e => {
     if (e.target === back || e.target.closest('#sclose')) return close();
-    const ph = e.target.closest('[data-ph]'); if (ph) { const p = P[+ph.dataset.ph]; $('#galimg').src = imgURL(p, 'large'); $('#galbox').style.setProperty('--insitu', `url('${imgURL(p, 'small')}')`); const c = $('#galcred'); c.textContent = credit(p) + ' · iNaturalist'; c.href = 'https://www.inaturalist.org/photos/' + p.id; $$('[data-ph]', back).forEach(b => b.setAttribute('aria-pressed', b === ph)); }
+    const ph = e.target.closest('[data-ph]'); if (ph) { const p = P[+ph.dataset.ph]; $('#galimg').src = imgURL(p, 'large'); $('#galbox').style.setProperty('--insitu', `url('${imgURL(p, 'small')}')`); const c = $('#galcred'); c.textContent = creditTxt(p); const lk = photoLink(p); if (lk) c.href = lk; else c.removeAttribute('href'); $$('[data-ph]', back).forEach(b => b.setAttribute('aria-pressed', b === ph)); }
     const go = e.target.closest('[data-goto]'); if (go) openSheet(go.dataset.goto);
   };
   back.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
@@ -654,7 +663,7 @@ function weakList() {
 }
 
 /* ---------------- à propos / confidentialité ---------------- */
-function photographers() { const c = {}; for (const s of SP) for (const p of s.photos) c[p.attr] = (c[p.attr] || 0) + 1; return Object.keys(c).sort((a, b) => a.localeCompare(b, 'fr')); }
+function photographers() { const c = {}; for (const s of SP) for (const p of s.photos) if (!p.local) c[p.attr] = (c[p.attr] || 0) + 1; return Object.keys(c).sort((a, b) => a.localeCompare(b, 'fr')); }
 function viewAbout() {
   const light = matchMedia('(prefers-color-scheme: light)').matches;
   const ph = photographers(), changed = SP.filter(s => s.old);
@@ -673,6 +682,7 @@ function viewAbout() {
     <h2>Crédits</h2>
     <p><b>Textes, statuts et critères d'identification :</b> d'après E. Remérand (2024), <i>Guide d'identification des serpents de Guyane et amphisbènes</i> ; E. Remérand (2021), <i>Aide à l'identification des lézards de Guyane</i> ; M. Dewynter, T. Le Pape, E. Remérand & T. Frétey (2019), <i>L'identification des tortues terrestres, dulçaquicoles et marines de Guyane</i>, Les cahiers de la fondation Biotope 26 ; M. Dewynter, C. Marty & M. Blanc (2016), <i>L'identification des caïmans de Guyane</i>, Les cahiers de la fondation Biotope 2.</p>
     <p><b>Photos :</b> <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a>, sous licences Creative Commons (CC0, CC BY, CC BY-NC, CC BY-SA, CC BY-NC-SA). L'auteur et la licence sont affichés sur chaque photo. Merci aux ${ph.length} photographes : ${ph.map(esc).join(', ')}.</p>
+    <p><b>Photos transmises avec l'autorisation de leurs auteurs :</b> ${[...new Set(LOCAL.map(l => l.auteur))].map(esc).join(', ')}, pour les espèces encore absentes ou mal identifiées sur iNaturalist.</p>
     <p><b>Cartes :</b> localités des observations iNaturalist de qualité recherche en Guyane (coordonnées non masquées). Contour de la Guyane : Natural Earth.</p>
     <p><b>Taxonomie :</b> noms mis à jour en 2026 (${changed.length} changements par rapport aux guides, l'ancien nom est indiqué sur chaque fiche), dont <i>Sibon nebulatus</i> et <i>S. nigralbus</i>, <i>Alopoglossus brevifrontalis</i>, <i>Micrurus diutius</i>, <i>Corallus hortulana</i> et <i>Podocnemis unifilis</i>.</p>
     <p><b>Licence :</b> chaque photo garde la licence choisie par son auteur. Le code de l'application est sous licence MIT.</p>
@@ -748,14 +758,14 @@ function mastered(arr) { return arr.filter(s => Store.mastery(s.id).b >= 3).leng
 function carnetCount() { return Object.keys(Store.data.carnet).filter(id => BYID[id]).length; }
 function badgeDefs() {
   const sP = SP.filter(hasPhoto), R = Store.data.rec, grp = g => sP.filter(s => s.group === g);
-  const venom = sP.filter(s => ['VM', 'VF'].includes(s.dg));
+  const venom = sP.filter(s => ['L', 'F'].includes(s.dg));
   const defs = [
     ['premier', 'Première mue', 'Donner sa première bonne réponse', () => Store.data.totals.correct >= 1],
     ['oeil10', 'Œil de lynx', 'Maîtriser 10 espèces', () => mastered(sP) >= 10],
     ['oeil50', "Regard d'expert", 'Maîtriser 50 espèces', () => mastered(sP) >= 50],
     ['oeil100', 'Herpéto confirmé', 'Maîtriser 100 espèces', () => mastered(sP) >= 100],
     ['all', 'Encyclopédie vivante', 'Maîtriser toutes les espèces', () => sP.length && mastered(sP) >= sP.length],
-    ['venin', 'Sait à qui il a affaire', `Maîtriser les ${venom.length} serpents dangereux`, () => venom.length && mastered(venom) >= venom.length],
+    ['venin', 'Sait à qui il a affaire', `Maîtriser les ${venom.length} serpents venimeux mordeurs`, () => venom.length && mastered(venom) >= venom.length],
     ['serpents', 'Charmeur de serpents', `Maîtriser les ${grp('serpent').length} serpents`, () => grp('serpent').length && mastered(grp('serpent')) >= grp('serpent').length],
     ['lezards', 'Roi des lézards', `Maîtriser les ${grp('lezard').length} lézards`, () => grp('lezard').length && mastered(grp('lezard')) >= grp('lezard').length],
     ['tortues', 'Pas si lent', `Maîtriser les ${grp('tortue').length} tortues`, () => grp('tortue').length && mastered(grp('tortue')) >= grp('tortue').length],

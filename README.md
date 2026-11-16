@@ -24,7 +24,7 @@ Tout le contenu des fiches est dans **`data/especes.csv`** (modifiable directeme
 | `activite` | `J` (diurne), `N` (nocturne), `JN` |
 | `uicn` | `CR`, `EN`, `VU`, `NT`, `LC`, `DD`, `NA`, `NE` (liste rouge Guyane) |
 | `protection` | `P` (protégée) ou `H` (protégée avec son habitat) |
-| `danger` | serpents : `N` non venimeux, `VI` venimeux inoffensif, `VM` danger modéré, `VF` danger fort |
+| `venin` | serpents : `N` non venimeux, `NM` venimeux non mordeur, `L` venimeux à venin léger, `F` venimeux à venin fort |
 | `exotique` | `oui` pour une espèce introduite |
 | `criteres` | critères d'identification, séparés par `\|` |
 | `confusions` | noms scientifiques des espèces confondables, séparés par `\|` |
@@ -33,11 +33,18 @@ Tout le contenu des fiches est dans **`data/especes.csv`** (modifiable directeme
 
 ## Photos et cartes
 
+### Photos transmises par leurs auteurs
+`data/photos.csv` liste les photos ajoutées à la main (dossier `assets/photos/`, avec une version `-mini.jpg`) :
+`id` de l'espèce, `fichier`, `auteur`, `remplace_inat`. Avec `remplace_inat` = `oui`, les photos et la carte iNaturalist
+de l'espèce ne sont plus utilisées (utile quand les observations iNat sont mal identifiées).
+
+### Photos iNaturalist
+
 Toutes les photos viennent d'iNaturalist, sous licence Creative Commons, avec le nom de l'auteur affiché.
 `data/medias.json` (photos des fiches, localités des cartes) et `data/inat.json` (photos de terrain du quiz)
 sont régénérés automatiquement le 1er de chaque mois par GitHub Actions (`tools/build_inat.py`).
 Pour lancer une mise à jour tout de suite : onglet **Actions** → « Photos et cartes iNaturalist » → **Run workflow**.
-Après avoir changé un `inat_id`, lance cette mise à jour.
+La mise à jour se lance aussi toute seule à chaque modification de `data/especes.csv`.
 
 ## Licences
 
