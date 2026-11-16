@@ -64,7 +64,7 @@ i.sp,.sp{font-style:italic}
 .topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
 .topbar-in{display:flex;align-items:center;gap:16px;height:58px}
 .brand{font-family:var(--f-display);font-weight:700;font-size:1.55rem;letter-spacing:.02em;color:var(--fg);text-decoration:none;display:flex;align-items:center;gap:10px;margin-right:auto;text-transform:uppercase}
-.brand-mark{width:62px;height:30px;background:url(../assets/mark-sk-blanc.png) center/contain no-repeat}
+.brand-mark{width:42px;height:36px;background:url(../assets/mark-sk-blanc.png) center/contain no-repeat}
 @media (prefers-color-scheme: light){.brand-mark{background-image:url(../assets/mark-sk-noir.png)}}
 .nav{display:flex;gap:4px}
 .nav a{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:700;font-size:.95rem}
@@ -618,4 +618,4 @@ details.fams .chips{margin-top:10px}
 .mode .ico{position:static;width:40px;height:40px;margin-bottom:4px}
 .mode b{font-size:1.45rem;line-height:1.05}
 @media (max-width:420px){.mode{padding:13px}.mode b{font-size:1.22rem}.mode .ico{width:36px;height:36px}.mode .ico svg{width:21px;height:21px}}
-.hero-logo{width:min(300px,74vw)}
+.hero-logo{width:min(260px,66vw)}
